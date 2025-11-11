@@ -86,9 +86,13 @@ export async function POST(req: NextRequest) {
 
     // ✅ 4️⃣ Find subscribed users for this category
     const subscribedUsers = await User.find({
-      isSubscribed: true,
-      planExpiry: { $gt: new Date() },
-      planType: category,
+      subscriptions: {
+        $elemMatch: {
+          planType: category,
+          planExpiry: { $gt: new Date() },
+          isActive: true,
+        },
+      },
       oneSignalUserId: { $exists: true, $ne: null },
     });
 
@@ -118,7 +122,7 @@ export async function POST(req: NextRequest) {
       console.warn("⚠️ Socket.io not initialized, skipping emit.");
     }
 
-      // Send Push Notifications via OneSignal
+    // Send Push Notifications via OneSignal
     for (const user of subscribedUsers) {
       await fetch("https://onesignal.com/api/v1/notifications", {
         method: "POST",
@@ -145,7 +149,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
 
 // 🗑 DELETE → Delete tip
 export async function DELETE(req: NextRequest) {
